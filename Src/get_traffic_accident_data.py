@@ -25,7 +25,7 @@ def parse_line(line):
         print(f"無法處理這行資料：{line}\n   錯誤原因：{e}")
         return None
 
-url = "https://od.moi.gov.tw/api/v1/rest/datastore/A01010000C-001309-001"
+url = "https://od.moi.gov.tw/api/v1/rest/datastore/A01010000C-001309-001?limit=1000000"
 response = requests.get(url)
 data = response.json()
 data = data["result"]["records"]
