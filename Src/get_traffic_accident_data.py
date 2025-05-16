@@ -49,8 +49,10 @@ for item in data:
     description = item["CARTYPE"]
 
     if happened_at:
-        sql_command = f"INSERT INTO accidents (happened_at, location, description) VALUES ('{happened_at}', '{description}', '{description}')"
-        cur.execute(sql_command)
+        cur.execute(
+            "INSERT INTO accidents (happened_at, location, description) VALUES (%s, %s, %s)",
+            (happened_at, location, description)
+        )
 
 conn.commit()
 cur.close()
