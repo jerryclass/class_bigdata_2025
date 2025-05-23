@@ -40,6 +40,16 @@ conn = psycopg2.connect(
 )
 cur = conn.cursor()
 
+cur.execute("DROP TABLE IF EXISTS accidents")
+
+cur.execute("""
+    CREATE TABLE accidents (
+        id SERIAL PRIMARY KEY,
+        happened_at TIMESTAMP NOT NULL,
+        location TEXT NOT NULL,
+        description TEXT
+    )
+""")
 
 for item in data:
     print(f'{parse_line(item["ACCYMD"])} {item["PLACE"]} {item["CARTYPE"]}')
