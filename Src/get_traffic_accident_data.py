@@ -43,7 +43,6 @@ cur = conn.cursor()
 cur.execute("DROP TABLE IF EXISTS accidents")
 cur.execute("DROP TABLE IF EXISTS vehicles")
 
-
 cur.execute("""
     CREATE TABLE accidents (
         id SERIAL PRIMARY KEY,
@@ -62,7 +61,9 @@ cur.execute("""
 
 vehicles_seen = set()
 
-for item in data:
+for i, item in enumerate(data):
+    if i == 0:
+        continue
     print(f'{parse_line(item["ACCYMD"])} {item["PLACE"]} {item["CARTYPE"]}')
 
     happened_at = parse_line(item["ACCYMD"])
