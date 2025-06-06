@@ -41,6 +41,8 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 
 cur.execute("DROP TABLE IF EXISTS accidents")
+cur.execute("DROP TABLE IF EXISTS vehicles")
+
 
 cur.execute("""
     CREATE TABLE accidents (
@@ -51,6 +53,15 @@ cur.execute("""
     )
 """)
 
+cur.execute("""
+    CREATE TABLE vehicles (
+        id SERIAL PRIMARY KEY,
+        vehicles_name TEXT
+    )
+""")
+
+vehicles_seen = set()
+
 for item in data:
     print(f'{parse_line(item["ACCYMD"])} {item["PLACE"]} {item["CARTYPE"]}')
 
@@ -58,12 +69,23 @@ for item in data:
     location = item["PLACE"]
     description = item["CARTYPE"]
 
+    description_list = description.split(';')
+
+    for description_item in description_list:
+        if description_item.strip() not in vehicles_seen:
+            vehicles_seen.add(description_item.strip())
+
     if happened_at:
         cur.execute(
             "INSERT INTO accidents (happened_at, location, description) VALUES (%s, %s, %s)",
             (happened_at, location, description)
         )
 
+for vehicle_name in vehicles_seen:
+    cur.execute(
+        "INSERT INTO vehicles (vehicles_name) VALUES (%s)",
+        (vehicle_name,)
+    )
 conn.commit()
 cur.close()
 conn.close()
