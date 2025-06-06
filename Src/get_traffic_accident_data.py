@@ -2,6 +2,7 @@ import requests
 import json
 import re, datetime
 import psycopg2
+from collections import OrderedDict
 
 def parse_line(line):
     try:
@@ -42,13 +43,13 @@ cur = conn.cursor()
 
 cur.execute("DROP TABLE IF EXISTS accidents")
 cur.execute("DROP TABLE IF EXISTS vehicles")
+cur.execute("DROP TABLE IF EXISTS accident_vehicles")
 
 cur.execute("""
     CREATE TABLE accidents (
         id SERIAL PRIMARY KEY,
         happened_at TIMESTAMP NOT NULL,
-        location TEXT NOT NULL,
-        description TEXT
+        location TEXT NOT NULL
     )
 """)
 
@@ -59,7 +60,16 @@ cur.execute("""
     )
 """)
 
-vehicles_seen = set()
+cur.execute("""
+    CREATE TABLE accident_vehicles (
+        id SERIAL PRIMARY KEY,
+        accident_id INTEGER  NOT NULL,
+        vehicle_id INTEGER  NOT NULL
+    );
+""")
+
+
+vehicles_seen = OrderedDict()
 
 for i, item in enumerate(data):
     if i == 0:
@@ -70,22 +80,35 @@ for i, item in enumerate(data):
     location = item["PLACE"]
     description = item["CARTYPE"]
 
-    description_list = description.split(';')
 
-    for description_item in description_list:
-        if description_item.strip() not in vehicles_seen:
-            vehicles_seen.add(description_item.strip())
 
     if happened_at:
         cur.execute(
-            "INSERT INTO accidents (happened_at, location, description) VALUES (%s, %s, %s)",
-            (happened_at, location, description)
+            "INSERT INTO accidents (id, happened_at, location) VALUES (%s, %s, %s)",
+            (i, happened_at, location)
         )
 
-for vehicle_name in vehicles_seen:
+        description_list = description.split(';')
+
+        for description_item in description_list:
+            vehicle = description_item.strip()
+            if vehicle and vehicle not in vehicles_seen:
+                vehicles_seen[vehicle] = vehicle
+
+            if vehicle:
+                vehicle_id = list(vehicles_seen.keys()).index(vehicle) + 1
+            else:
+                vehicle_id = 0
+
+            cur.execute(
+                "INSERT INTO accident_vehicles (accident_id, vehicle_id) VALUES (%s, %s)",
+                (i, vehicle_id)
+            )
+
+for i, vehicle_name in enumerate(vehicles_seen, start=1):
     cur.execute(
-        "INSERT INTO vehicles (vehicles_name) VALUES (%s)",
-        (vehicle_name,)
+        "INSERT INTO vehicles (id, vehicles_name) VALUES (%s, %s)",
+        (i, vehicle_name)
     )
 conn.commit()
 cur.close()
